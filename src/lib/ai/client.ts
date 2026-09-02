@@ -1,5 +1,8 @@
 const ZERO_WIDTH = /[\u200B-\u200D\uFEFF]/g;
 
+/** Groq deprecated llama-3.3-70b-versatile on 2026-08-16; see console.groq.com/docs/deprecations */
+export const GROQ_CHAT_MODEL = 'openai/gpt-oss-120b';
+
 export function normalizeGroqKey(raw: string | undefined | null): string {
   return (raw ?? '')
     .replace(ZERO_WIDTH, '')
@@ -57,7 +60,7 @@ export async function verifyGroqKey(groqKey: string): Promise<void> {
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_CHAT_MODEL,
       temperature: 0,
       max_tokens: 8,
       messages: [{ role: 'user', content: 'ping' }],
@@ -87,7 +90,7 @@ export async function askAI(
         Authorization: `Bearer ${groqKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_CHAT_MODEL,
         temperature: options.temperature ?? 0.35,
         top_p: 0.9,
         max_tokens: options.maxTokens ?? 700,
@@ -124,6 +127,9 @@ export function groqErrorMessage(error: unknown): string {
     }
     if (error.status === 429) {
       return 'Groq istek limiti aşıldı. Birkaç dakika sonra tekrar dene.';
+    }
+    if (/does not exist|model_not_found|deprecated/i.test(error.message)) {
+      return 'Groq modeli güncellendi. Sayfayı yenileyip tekrar dene.';
     }
     return error.message;
   }
